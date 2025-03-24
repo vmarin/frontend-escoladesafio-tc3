@@ -35,11 +35,13 @@ export default function LoginPage() {
         console.log("Token salvo:", data.access_token); // Log para depuração
 
         // Verifica o papel do usuário (professor ou aluno)
-        if (username === "professor") {
+        if (username === "admin") {
           localStorage.setItem("userRole", "professor");
         } else if (username === "aluno") {
           localStorage.setItem("userRole", "aluno");
         }
+
+        console.log("Papel do usuário no localStorage:", localStorage.userRole); // Log para depuração
 
         toast.success("Login realizado com sucesso!");
         router.push("/posts"); // Redireciona para a página de posts

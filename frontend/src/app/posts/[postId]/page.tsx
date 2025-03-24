@@ -103,7 +103,6 @@ export default function PostDetails({
               Publicado em:{" "}
               {new Date(post.created_at).toLocaleDateString("pt-BR")}
             </p>
-            <p>Autor: {post.author}</p>
           </div>
 
           {/* Botões de Ação (apenas para professor) */}

@@ -28,6 +28,9 @@ export default function PostsPage() {
     const token = localStorage.getItem("token");
     const role = localStorage.getItem("userRole");
 
+    console.log("Token no localStorage:", token); // Log para depuração
+    console.log("Papel do usuário no localStorage:", role); // Log para depuração
+
     if (!token || !role) {
       router.push("/"); // Redireciona para o login se não estiver autenticado
     } else {
