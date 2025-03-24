@@ -21,7 +21,7 @@ export default function LoginPage() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${process.env.NEXT_PUBLIC_BEARER_TOKEN}`,
+            Authorization: `Bearer 06defc32-8a22-4152-8d15-834acf6456875`,
           },
           body: JSON.stringify({ username, password }),
         }

@@ -16,12 +16,15 @@ type Publication = {
 };
 
 // Função para buscar os detalhes da publicação
+
+const token = localStorage.getItem("token");
+
 async function fetchPostDetails(postId: string) {
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_API_URL}/posts/${postId}`,
     {
       headers: {
-        Authorization: `Bearer ${process.env.NEXT_PUBLIC_BEARER_TOKEN}`,
+        Authorization: `Bearer ${token}`,
       },
     }
   );
@@ -80,7 +83,7 @@ export default function PostDetails({
         <div className="container mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-800">Escola Desafio</h1>
           <Link
-            href="/"
+            href="/posts"
             className="flex items-center text-gray-600 hover:text-gray-800 transition duration-200"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
@@ -123,14 +126,14 @@ export default function PostDetails({
                       {
                         method: "DELETE",
                         headers: {
-                          Authorization: `Bearer ${process.env.NEXT_PUBLIC_BEARER_TOKEN}`,
+                          Authorization: `Bearer ${token}`,
                         },
                       }
                     );
 
                     if (response.ok) {
                       toast.success("Publicação excluída com sucesso!");
-                      router.push("/");
+                      router.push("/posts");
                     } else {
                       toast.error("Erro ao excluir a publicação.");
                     }

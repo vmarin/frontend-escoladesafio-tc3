@@ -22,10 +22,10 @@ export default function PostsPage() {
   const [selectedItem, setSelectedItem] = useState<Publication | null>(null);
   const [data, setData] = useState<Publication[]>([]);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const token = localStorage.getItem("token");
 
   // Verifica o papel do usuário ao carregar a página
   useEffect(() => {
-    const token = localStorage.getItem("token");
     const role = localStorage.getItem("userRole");
 
     console.log("Token no localStorage:", token); // Log para depuração
@@ -46,7 +46,7 @@ export default function PostsPage() {
           `${process.env.NEXT_PUBLIC_API_URL}/posts`,
           {
             headers: {
-              Authorization: `Bearer ${process.env.NEXT_PUBLIC_BEARER_TOKEN}`,
+              Authorization: `Bearer ${token}`,
             },
           }
         );
@@ -78,7 +78,7 @@ export default function PostsPage() {
         {
           method: "DELETE",
           headers: {
-            Authorization: `Bearer ${process.env.NEXT_PUBLIC_BEARER_TOKEN}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -86,6 +86,7 @@ export default function PostsPage() {
       if (response.ok) {
         setData(data.filter((item) => item._id !== selectedItem._id));
         toast.success("Postagem excluída com sucesso!");
+        router.push("/posts");
       } else {
         toast.error("Erro ao excluir a postagem.");
       }

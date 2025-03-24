@@ -14,6 +14,8 @@ type Publication = {
   created_at: string;
 };
 
+const token = localStorage.getItem("token");
+
 export default function EditPost({ params }: { params: { postId: string } }) {
   const router = useRouter();
   const [post, setPost] = useState<Publication | null>(null);
@@ -31,7 +33,7 @@ export default function EditPost({ params }: { params: { postId: string } }) {
           `${process.env.NEXT_PUBLIC_API_URL}/posts/${postId}`, // Use `postId` desempacotado
           {
             headers: {
-              Authorization: `Bearer ${process.env.NEXT_PUBLIC_BEARER_TOKEN}`,
+              Authorization: `Bearer ${token}`,
             },
           }
         );
@@ -61,7 +63,7 @@ export default function EditPost({ params }: { params: { postId: string } }) {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${process.env.NEXT_PUBLIC_BEARER_TOKEN}`,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ title, description }),
         }

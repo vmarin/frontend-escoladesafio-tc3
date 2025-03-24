@@ -11,12 +11,12 @@ export default function NewPostPage() {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [author, setAuthor] = useState("");
+  const token = localStorage.getItem("token");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!title || !description || !author) {
+    if (!title || !description) {
       toast.error("Preencha todos os campos.");
       return;
     }
@@ -26,14 +26,14 @@ export default function NewPostPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_BEARER_TOKEN}`,
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ title, description, author }),
+        body: JSON.stringify({ title, description }),
       });
 
       if (response.ok) {
         toast.success("Post criado com sucesso!");
-        router.push("/"); // Redireciona para a página inicial após o sucesso
+        router.push("/posts"); // Redireciona para a página inicial após o sucesso
       } else {
         toast.error("Erro ao criar o post.");
       }
@@ -89,7 +89,7 @@ export default function NewPostPage() {
                 required
               />
             </div>
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium text-gray-700">
                 Autor
               </label>
@@ -100,7 +100,7 @@ export default function NewPostPage() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
                 required
               />
-            </div>
+            </div> */}
             <button
               type="submit"
               className="w-full flex items-center justify-center px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition duration-200"
