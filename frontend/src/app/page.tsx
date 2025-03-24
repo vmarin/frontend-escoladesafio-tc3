@@ -13,17 +13,43 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Simulação de autenticação
-    if (username === "professor" && password === "professor123") {
-      localStorage.setItem("userRole", "professor");
-      toast.success("Login realizado com sucesso!");
-      router.push("/posts");
-    } else if (username === "aluno" && password === "aluno123") {
-      localStorage.setItem("userRole", "aluno");
-      toast.success("Login realizado com sucesso!");
-      router.push("/posts");
-    } else {
-      toast.error("Usuário ou senha incorretos.");
+    try {
+      // Requisição à API para autenticação
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${process.env.NEXT_PUBLIC_BEARER_TOKEN}`,
+          },
+          body: JSON.stringify({ username, password }),
+        }
+      );
+
+      console.log("Resposta da API:", response); // Log para depuração
+
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem("token", data.access_token); // Salva o token no localStorage
+        console.log("Token salvo:", data.access_token); // Log para depuração
+
+        // Verifica o papel do usuário (professor ou aluno)
+        if (username === "professor") {
+          localStorage.setItem("userRole", "professor");
+        } else if (username === "aluno") {
+          localStorage.setItem("userRole", "aluno");
+        }
+
+        toast.success("Login realizado com sucesso!");
+        router.push("/posts"); // Redireciona para a página de posts
+      } else {
+        const errorData = await response.json(); // Captura a mensagem de erro da API
+        toast.error(errorData.message || "Erro ao efetuar login");
+      }
+    } catch (error) {
+      console.error("Erro ao fazer login:", error);
+      toast.error("Erro ao conectar com o servidor");
     }
   };
 

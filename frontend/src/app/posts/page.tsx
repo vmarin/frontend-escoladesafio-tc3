@@ -25,8 +25,10 @@ export default function PostsPage() {
 
   // Verifica o papel do usuário ao carregar a página
   useEffect(() => {
+    const token = localStorage.getItem("token");
     const role = localStorage.getItem("userRole");
-    if (!role) {
+
+    if (!token || !role) {
       router.push("/"); // Redireciona para o login se não estiver autenticado
     } else {
       setUserRole(role);
