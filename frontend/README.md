@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Manual do Front-end - Escola Desafio
 
-## Getting Started
+## Introdução
 
-First, run the development server:
+Este documento detalha a estrutura, configuração e uso do frontend desenvolvido para interagir com a API da Escola Desafio.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 1. Configuração Inicial
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Base URL.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Backend em execução:**
+  ```
+  http://localhost:3001/
 
-## Learn More
+### Requisitos.
 
-To learn more about Next.js, take a look at the following resources:
+- Conexão HTTPS.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 2. Arquitetura da Aplicação
 
-## Deploy on Vercel
+### Estrutura de Pastas (Next.js App Router)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```plaintext
+src/  
+├── app/                   # Páginas da aplicação (Roteamento do Next.js)  
+│   ├── login/             # Rotas de autenticação  
+│   ├── new-post/          # Página de criação de posts 
+│   ├── posts/             
+│   │   ├──[postId]        # Rota dinâmica de acesso aos posts pelo id
+│   │      └── edit/       # Rota dinâmica de edição de post
+│   ├── layout.tsx         # Layout principal 
+│   └── page.tsx           # Página principal
+├── components/            # Componentes reutilizáveis  
+├── contexts/              # Contextos do React  
+└── pages/                 #  
+``` 
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Tecnologias Utilizadas
+
+### Frontend
+- **Framework**: Next.js 15 (App Router)
+- **Estilização**: Tailwind CSS 
+- **Ícones**: Lucide React
+- **Formulários**: React Hook Form 
+- **Notificações**: React Toastify
+
+### Ferramentas
+- TypeScript para tipagem
+- ESLint para padronização
+- Autoprefixer para CSS
+
+### Padrões
+- Componentização (Header, Modal)
+- Responsividade Mobile First
+- Paginação client-side
+
+
+### Mapeamento de Rotas
+
+| Rota                     | Arquivo Correspondente               | Tipo        | Autenticação | Descrição                          |
+|--------------------------|--------------------------------------|-------------|--------------|------------------------------------|
+| `/`                      | `app/page.tsx`                       | Estática    | Pública      | Página inicial (home)              |
+| `/login`                 | `app/login/page.tsx`                 | Estática    | Pública      | Autenticação de usuários           |
+| `/new-post`              | `app/new-post/page.tsx`              | Estática    | Privada      | Formulário de criação de posts     |
+| `/posts/[postId]`        | `app/posts/[postId]/page.tsx`        | Dinâmica    | Pública      | Detalhes de um post específico     |
+| `/posts/[postId]/edit`   | `app/posts/[postId]/edit/page.tsx`   | Dinâmica    | Privada      | Edição de post (requer autenticação) |
+
