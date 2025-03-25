@@ -19,6 +19,8 @@ type Publication = {
 
 const token = localStorage.getItem("token");
 
+console.log(token);
+
 async function fetchPostDetails(postId: string) {
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_API_URL}/posts/${postId}`,
@@ -83,7 +85,7 @@ export default function PostDetails({
         <div className="container mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-800">Escola Desafio</h1>
           <Link
-            href="/posts"
+            href="/"
             className="flex items-center text-gray-600 hover:text-gray-800 transition duration-200"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
@@ -133,7 +135,7 @@ export default function PostDetails({
 
                     if (response.ok) {
                       toast.success("Publicação excluída com sucesso!");
-                      router.push("/posts");
+                      router.push("/");
                     } else {
                       toast.error("Erro ao excluir a publicação.");
                     }

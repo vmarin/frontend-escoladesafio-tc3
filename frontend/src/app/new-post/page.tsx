@@ -33,7 +33,7 @@ export default function NewPostPage() {
 
       if (response.ok) {
         toast.success("Post criado com sucesso!");
-        router.push("/posts"); // Redireciona para a página inicial após o sucesso
+        router.push("/"); // Redireciona para a página inicial após o sucesso
       } else {
         toast.error("Erro ao criar o post.");
       }

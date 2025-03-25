@@ -1,97 +1,265 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Link from "next/link";
+import { Search, Edit, Trash, Plus, LogIn, ArrowLeft, X } from "lucide-react";
 
-export default function LoginPage() {
+type Publication = {
+  _id: string;
+  title: string;
+  description: string;
+  author: string;
+  created_at: string;
+};
+
+export default function PostsPage() {
   const router = useRouter();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [search, setSearch] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<Publication | null>(null);
+  const [data, setData] = useState<Publication[]>([]);
+  const [token, setToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedToken = localStorage.getItem("token");
+      setToken(storedToken);
+
+      // Não redireciona automaticamente para login quando não tem token
+      // Apenas atualiza o estado
+    }
+    setIsLoading(false);
+  }, [router]);
+
+  // Busca as publicações
+  useEffect(() => {
+    const fetchPublications = async () => {
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/posts`,
+          {
+            headers: {
+              Authorization: `Bearer 06defc32-8a22-4152-8d15-834acf6456875`,
+            },
+          }
+        );
+        if (response.ok) {
+          const result = await response.json();
+          setData(result);
+        } else {
+          console.error("Erro ao buscar dados:", response.status);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar dados:", error);
+      }
+    };
+
+    fetchPublications();
+  }, []);
+
+  const handleDelete = (item: Publication) => {
+    setSelectedItem(item);
+    setShowModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedItem || !selectedItem._id) return;
 
     try {
-      // Requisição à API para autenticação
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
+        `${process.env.NEXT_PUBLIC_API_URL}/posts/${selectedItem._id}`,
         {
-          method: "POST",
+          method: "DELETE",
           headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer 06defc32-8a22-4152-8d15-834acf6456875`,
+            Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ username, password }),
         }
       );
 
-      console.log("Resposta da API:", response); // Log para depuração
-
       if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem("token", data.access_token); // Salva o token no localStorage
-        console.log("Token salvo:", data.access_token); // Log para depuração
-
-        // Verifica o papel do usuário (professor ou aluno)
-        if (username === "admin") {
-          localStorage.setItem("userRole", "professor");
-        } else if (username === "aluno") {
-          localStorage.setItem("userRole", "aluno");
-        }
-
-        console.log("Papel do usuário no localStorage:", localStorage.userRole); // Log para depuração
-
-        toast.success("Login realizado com sucesso!");
-        router.push("/posts"); // Redireciona para a página de posts
+        setData(data.filter((item) => item._id !== selectedItem._id));
+        toast.success("Postagem excluída com sucesso!");
+        router.push("/");
       } else {
-        const errorData = await response.json(); // Captura a mensagem de erro da API
-        toast.error(errorData.message || "Erro ao efetuar login");
+        toast.error("Erro ao excluir a postagem.");
       }
     } catch (error) {
-      console.error("Erro ao fazer login:", error);
-      toast.error("Erro ao conectar com o servidor");
+      toast.error("Erro ao conectar com o servidor.");
+    } finally {
+      setShowModal(false);
     }
   };
 
+  if (isLoading) {
+    return <div className="p-8">Carregando...</div>;
+  }
+
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">Login</h1>
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Usuário
-            </label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
-              required
-            />
+    <div className="min-h-screen bg-gray-100 flex flex-col">
+      {/* Header */}
+      <header className="bg-white shadow-md p-4">
+        <div className="container mx-auto flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-gray-800">Escola Desafio</h1>
+          <div className="flex items-center space-x-4">
+            {token && (
+              <Link
+                href="/new-post"
+                className="flex items-center px-4 py-2 bg-violet-500 text-white rounded-lg hover:bg-violet-600 transition duration-200"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                Nova Publicação
+              </Link>
+            )}
+            <button
+              onClick={() => {
+                if (token) {
+                  // Se tem token (modo Sair)
+                  if (typeof window !== "undefined") {
+                    localStorage.removeItem("token");
+                  }
+                  setToken(null);
+                  window.location.reload();
+                } else {
+                  // Se não tem token (modo Login)
+                  router.push("/login");
+                }
+              }}
+              className={`flex items-center px-4 py-2 rounded-lg hover:opacity-90 transition duration-200 ${
+                token ? "bg-red-500" : "bg-green-500" // Vermelho para Sair, Verde para Login
+              } text-white`}
+            >
+              <LogIn className="w-5 h-5 mr-2" />
+              {token ? "Sair" : "Login"}
+            </button>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Senha
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
-              required
-            />
+        </div>
+      </header>
+
+      {/* Conteúdo Principal */}
+      <main className="flex-1 container mx-auto p-4">
+        {/* Campo de Busca */}
+        <div className="flex items-center border border-gray-300 rounded-lg p-2 w-full max-w-md mb-6 bg-white">
+          <Search className="w-5 h-5 text-gray-500" />
+          <input
+            type="text"
+            placeholder="Buscar por título..."
+            className="w-full outline-none pl-2 text-gray-700"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+
+        {/* Tabela de Publicações */}
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-gray-200">
+              <tr>
+                <th className="p-3 text-left text-gray-700">TÍTULO</th>
+                <th className="p-3 text-left text-gray-700">DESCRIÇÃO</th>
+                <th className="p-3 text-left text-gray-700">DATA</th>
+                {token && (
+                  <th className="p-3 text-left text-gray-700">AÇÕES</th>
+                )}
+              </tr>
+            </thead>
+            <tbody>
+              {data
+                .filter((item) =>
+                  item.title.toLowerCase().includes(search.toLowerCase())
+                )
+                .map((item) => {
+                  const formattedDate = new Date(
+                    item.created_at
+                  ).toLocaleDateString("pt-BR");
+
+                  return (
+                    <tr
+                      key={item._id}
+                      className="border-t border-gray-200 hover:bg-gray-50 transition duration-200"
+                    >
+                      <td className="p-3 text-gray-800 hover:text-violet-600">
+                        <Link
+                          href={`/posts/${item._id}`}
+                          className="hover:text-violet-600 transition duration-200"
+                        >
+                          {item.title}
+                        </Link>
+                      </td>
+                      <td className="p-3 text-gray-700 truncate max-w-xs">
+                        {item.description}
+                      </td>
+                      <td className="p-3 text-gray-700">{formattedDate}</td>
+                      {token && (
+                        <td className="p-3 flex space-x-2">
+                          <Link
+                            href={`/posts/${item._id}/edit`}
+                            className="text-violet-500 hover:text-violet-600 transition duration-200"
+                          >
+                            <Edit className="w-5 h-5" />
+                          </Link>
+                          <button
+                            onClick={() => handleDelete(item)}
+                            className="text-red-500 hover:text-red-700 transition duration-200"
+                          >
+                            <Trash className="w-5 h-5" />
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+            </tbody>
+          </table>
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-white shadow-md p-4 mt-8">
+        <div className="container mx-auto text-center text-gray-600">
+          <p>© 2023 Escola Desafio. Todos os direitos reservados.</p>
+        </div>
+      </footer>
+
+      {/* Modal de Confirmação de Exclusão */}
+      {showModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold text-gray-800">Confirmação</h2>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-gray-500 hover:text-gray-700 transition duration-200"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-gray-700">
+              Tem certeza que deseja excluir a publicação &quot;
+              <strong>{selectedItem?.title}</strong>&quot;?
+            </p>
+            <div className="mt-4 flex justify-end space-x-2">
+              <button
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition duration-200"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-200"
+              >
+                Excluir
+              </button>
+            </div>
           </div>
-          <button
-            type="submit"
-            className="w-full bg-violet-600 text-white py-2 rounded-lg hover:bg-violet-700 transition duration-200"
-          >
-            Entrar
-          </button>
-        </form>
-      </div>
+        </div>
+      )}
+
+      {/* Notificações */}
       <ToastContainer position="bottom-center" autoClose={5000} />
     </div>
   );
