@@ -21,7 +21,7 @@ export default function PostsPage() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const { token } = useAuth()
+  const { token, logout } = useAuth()
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
   const [showModal, setShowModal] = useState(false)
@@ -30,7 +30,7 @@ export default function PostsPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   // Paginação
-  const ITEMS_PER_PAGE = 10
+  const ITEMS_PER_PAGE = 5
   const currentPage = parseInt(searchParams?.get('page') || '1')
   const searchQuery = searchParams?.get('q') || ''
 
@@ -49,7 +49,7 @@ export default function PostsPage() {
           `${process.env.NEXT_PUBLIC_API_URL}/posts`,
           {
             headers: {
-              Authorization: `Bearer 06defc32-8a22-4152-8d15-834acf6456875`,
+              Authorization: `Bearer ${process.env.NEXT_PUBLIC_BEARER_TOKEN}`,
             },
           }
         )
@@ -135,6 +135,11 @@ export default function PostsPage() {
           prev.filter((item) => item._id !== selectedItem._id)
         )
         toast.success('Postagem excluída com sucesso!')
+      } else if (response.status == 401) {
+        toast.error('Token expirado.')
+        setTimeout(() => {
+          logout()
+        }, 2000)
       } else {
         toast.error('Erro ao excluir a postagem.')
       }

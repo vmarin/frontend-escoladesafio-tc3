@@ -11,7 +11,7 @@ import ProtectedRoute from '@/components/ProtectedRoute'
 
 export default function NewPostPage() {
   const router = useRouter()
-  const { token } = useAuth()
+  const { token, logout } = useAuth()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
 
@@ -36,6 +36,12 @@ export default function NewPostPage() {
       if (response.ok) {
         toast.success('Post criado com sucesso!')
         router.push('/')
+      } else if (response.status == 401) {
+        toast.error("Token expirado.");
+        setTimeout(() => {
+          logout();
+        }, 2000);
+      
       } else {
         toast.error('Erro ao criar o post.')
       }

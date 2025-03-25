@@ -21,7 +21,7 @@ type Publication = {
 export default function EditPost() {
   const router = useRouter()
   const params = useParams()
-  const { token } = useAuth()
+  const { token, logout } = useAuth()
   const [post, setPost] = useState<Publication | null>(null)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -39,7 +39,7 @@ export default function EditPost() {
           `${process.env.NEXT_PUBLIC_API_URL}/posts/${params?.postId}`,
           {
             headers: {
-              Authorization: `Bearer 06defc32-8a22-4152-8d15-834acf6456875`,
+              Authorization: `Bearer ${process.env.NEXT_PUBLIC_BEARER_TOKEN}`,
             },
           }
         )
@@ -90,6 +90,11 @@ export default function EditPost() {
         if (params) {
           router.push(`/posts/${params.postId}`)
         }
+      } else if (response.status == 401) {
+        toast.error('Token expirado.')
+        setTimeout(() => {
+          logout()
+        }, 2000)
       } else {
         toast.error('Erro ao atualizar a publicação.')
       }
