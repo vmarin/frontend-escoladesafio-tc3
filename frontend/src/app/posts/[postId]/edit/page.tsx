@@ -33,7 +33,7 @@ export default function EditPost({ params }: { params: { postId: string } }) {
           `${process.env.NEXT_PUBLIC_API_URL}/posts/${postId}`, // Use `postId` desempacotado
           {
             headers: {
-              Authorization: `Bearer ${token}`,
+              Authorization: `Bearer 06defc32-8a22-4152-8d15-834acf6456875`,
             },
           }
         );

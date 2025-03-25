@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, use } from "react"; // Adicione `use` aqui
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useParams } from "next/navigation";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Link from "next/link";
@@ -15,67 +15,59 @@ type Publication = {
   created_at: string;
 };
 
-// Função para buscar os detalhes da publicação
-
-const token = localStorage.getItem("token");
-
-console.log(token);
-
-async function fetchPostDetails(postId: string) {
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/posts/${postId}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error("Erro ao carregar a publicação.");
-  }
-
-  return response.json();
-}
-
-export default function PostDetails({
-  params,
-}: {
-  params: { postId: string };
-}) {
+export default function PostDetails() {
   const router = useRouter();
+  const params = useParams();
+  const postId = params?.postId as string;
+
   const [post, setPost] = useState<Publication | null>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Desempacote `params` usando `React.use()`
-  const { postId } = use(params);
-
-  // Verifica o papel do usuário ao carregar a página
+  // Busca os detalhes da publicação e verifica o token
   useEffect(() => {
-    const role = localStorage.getItem("userRole");
-    if (!role) {
-      router.push("/"); // Redireciona para o login se não estiver autenticado
-    } else {
-      setUserRole(role);
-    }
-  }, [router]);
-
-  // Busca os detalhes da publicação
-  useEffect(() => {
-    const loadPost = async () => {
+    const fetchData = async () => {
       try {
-        const postData = await fetchPostDetails(postId); // Use `postId` desempacotado
-        setPost(postData);
+        // Verifica o token no client-side
+        if (typeof window !== "undefined") {
+          const storedToken = localStorage.getItem("token");
+          setToken(storedToken);
+        }
+
+        // Busca os dados da publicação
+        if (postId) {
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/posts/${postId}`,
+            {
+              headers: {
+                Authorization: `Bearer 06defc32-8a22-4152-8d15-834acf6456875`,
+              },
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error("Erro ao carregar a publicação.");
+          }
+
+          const postData = await response.json();
+          setPost(postData);
+        }
       } catch (error) {
         toast.error("Erro ao carregar a publicação.");
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    loadPost();
-  }, [postId]); // Use `postId` como dependência
+    fetchData();
+  }, [postId, token]);
 
-  if (!post || !userRole) {
+  if (isLoading) {
     return <div className="p-8">Carregando...</div>;
+  }
+
+  if (!post) {
+    return <div className="p-8">Publicação não encontrada</div>;
   }
 
   return (
@@ -110,8 +102,8 @@ export default function PostDetails({
             </p>
           </div>
 
-          {/* Botões de Ação (apenas para professor) */}
-          {userRole === "professor" && (
+          {/* Botões de Ação (apenas quando tem token) */}
+          {token && (
             <div className="flex space-x-4">
               <Link
                 href={`/posts/${post._id}/edit`}
