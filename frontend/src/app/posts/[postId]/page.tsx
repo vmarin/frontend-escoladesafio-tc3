@@ -5,8 +5,10 @@ import { useRouter, useParams } from 'next/navigation'
 import { toast, ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import Link from 'next/link'
-import { ArrowLeft, Edit, Trash } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { PostContent } from '@/components/PostContent'
+import { Header } from '@/components/Header'
 
 type Publication = {
   _id: string
@@ -100,63 +102,17 @@ export default function PostDetails() {
   return (
     <div className='min-h-screen bg-gray-100 flex flex-col'>
       {/* Header */}
-      <header className='bg-white shadow-md p-4'>
-        <div className='container mx-auto flex justify-between items-center'>
-          <h1 className='text-2xl font-bold text-gray-800'>Escola Desafio</h1>
-          <Link
-            href='/'
-            className='flex items-center text-gray-600 hover:text-gray-800 transition duration-200'
-          >
-            <ArrowLeft className='w-5 h-5 mr-2' />
-            Voltar
-          </Link>
-        </div>
-      </header>
+      <Header showBackButton={true} backHref='/' />
 
       {/* Conteúdo Principal */}
       <main className='flex-1 container mx-auto p-4'>
-        <div className='bg-white rounded-lg shadow-md p-6 max-w-2xl mx-auto'>
-          <h1 className='text-3xl font-bold text-gray-800 mb-4'>
-            {post.title}
-          </h1>
-          <div className='text-gray-700 mb-6 whitespace-pre-line'>
-            {post.description}
-          </div>
-          <div className='text-sm text-gray-500 mb-6'>
-            <p>
-              Publicado em:{' '}
-              {new Date(post.created_at).toLocaleDateString('pt-BR')}
-            </p>
-          </div>
-
-          {/* Botões de Ação */}
-          {isAuthenticated && (
-            <div className='flex space-x-4'>
-              <Link
-                href={`/posts/${post._id}/edit`}
-                className='flex items-center px-4 py-2 bg-violet-500 text-white rounded-lg hover:bg-violet-600 transition duration-200'
-              >
-                <Edit className='w-5 h-5 mr-2' />
-                Editar
-              </Link>
-              <button
-                onClick={handleDelete}
-                className='flex items-center px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-200'
-              >
-                <Trash className='w-5 h-5 mr-2' />
-                Excluir
-              </button>
-            </div>
-          )}
-        </div>
+        <PostContent
+          post={post}
+          isAuthenticated={isAuthenticated}
+          onDelete={handleDelete}
+          editHref={`/posts/${post._id}/edit`}
+        />
       </main>
-
-      {/* Footer */}
-      <footer className='bg-white shadow-md p-4 mt-8'>
-        <div className='container mx-auto text-center text-gray-600'>
-          <p>© 2023 Escola Desafio. Todos os direitos reservados.</p>
-        </div>
-      </footer>
 
       {/* Notificações */}
       <ToastContainer position='bottom-center' autoClose={5000} />

@@ -1,12 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { toast, ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import Link from 'next/link'
-import { Search, Edit, Trash, Plus, LogIn, X } from 'lucide-react'
+import { Search, Edit, Trash, X } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { Header } from '@/components/Header'
 
 type Publication = {
   _id: string
@@ -18,17 +19,32 @@ type Publication = {
 
 export default function PostsPage() {
   const router = useRouter()
-  const { token, logout } = useAuth()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const { token } = useAuth()
+  const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [selectedItem, setSelectedItem] = useState<Publication | null>(null)
-  const [data, setData] = useState<Publication[]>([])
+  const [allPosts, setAllPosts] = useState<Publication[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  // Busca as publicações
+  // Paginação
+  const ITEMS_PER_PAGE = 10
+  const currentPage = parseInt(searchParams?.get('page') || '1')
+  const searchQuery = searchParams?.get('q') || ''
+
+  // Atualiza o estado do input quando o query param muda
+  useEffect(() => {
+    setSearchInput(searchQuery)
+    setSearch(searchQuery)
+  }, [searchQuery])
+
+  // Busca todas as publicações
   useEffect(() => {
     const fetchPublications = async () => {
       try {
+        setIsLoading(true)
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/posts`,
           {
@@ -39,12 +55,20 @@ export default function PostsPage() {
         )
         if (response.ok) {
           const result = await response.json()
-          setData(result)
+          // Ordena os posts por data de criação (mais novos primeiro)
+          const sortedPosts = result.sort((a: Publication, b: Publication) => {
+            return (
+              new Date(b.created_at).getTime() -
+              new Date(a.created_at).getTime()
+            )
+          })
+          setAllPosts(sortedPosts)
         } else {
           console.error('Erro ao buscar dados:', response.status)
         }
       } catch (error) {
         console.error('Erro ao buscar dados:', error)
+        toast.error('Erro ao carregar publicações')
       } finally {
         setIsLoading(false)
       }
@@ -52,6 +76,40 @@ export default function PostsPage() {
 
     fetchPublications()
   }, [])
+
+  // Debounce para busca automática
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchInput !== search) {
+        const params = new URLSearchParams(searchParams?.toString() || '')
+
+        if (searchInput) {
+          params.set('q', searchInput)
+          params.set('page', '1') // Resetar para a primeira página ao buscar
+        } else {
+          params.delete('q')
+        }
+
+        router.push(`${pathname}?${params.toString()}`)
+      }
+    }, 500) // 500ms de delay
+
+    return () => clearTimeout(timer)
+  }, [searchInput, search, searchParams, pathname, router])
+
+  // Filtra e ordena os posts com base na busca
+  const filteredPosts = allPosts.filter((item) =>
+    item.title.toLowerCase().includes(search.toLowerCase())
+  )
+
+  // Paginação dos resultados filtrados
+  const totalItems = filteredPosts.length
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE)
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+  const paginatedPosts = filteredPosts.slice(
+    startIndex,
+    startIndex + ITEMS_PER_PAGE
+  )
 
   const handleDelete = (item: Publication) => {
     setSelectedItem(item)
@@ -73,9 +131,10 @@ export default function PostsPage() {
       )
 
       if (response.ok) {
-        setData(data.filter((item) => item._id !== selectedItem._id))
+        setAllPosts((prev) =>
+          prev.filter((item) => item._id !== selectedItem._id)
+        )
         toast.success('Postagem excluída com sucesso!')
-        router.push('/')
       } else {
         toast.error('Erro ao excluir a postagem.')
       }
@@ -87,134 +146,166 @@ export default function PostsPage() {
   }
 
   if (isLoading) {
-    return <div className='p-8'>Carregando...</div>
+    return (
+      <div className='min-h-screen flex items-center justify-center p-4'>
+        <div className='text-lg'>Carregando publicações...</div>
+      </div>
+    )
   }
 
   return (
     <div className='min-h-screen bg-gray-100 flex flex-col'>
-      {/* Header */}
-      <header className='bg-white shadow-md p-4'>
-        <div className='container mx-auto flex justify-between items-center'>
-          <h1 className='text-2xl font-bold text-gray-800'>Escola Desafio</h1>
-          <div className='flex items-center space-x-4'>
-            {token && (
-              <Link
-                href='/new-post'
-                className='flex items-center px-4 py-2 bg-violet-500 text-white rounded-lg hover:bg-violet-600 transition duration-200'
-              >
-                <Plus className='w-5 h-5 mr-2' />
-                Nova Publicação
-              </Link>
-            )}
-            <button
-              onClick={() => {
-                if (token) {
-                  logout()
-                  router.push('/')
-                } else {
-                  router.push('/login')
-                }
-              }}
-              className={`flex items-center px-4 py-2 rounded-lg hover:opacity-90 transition duration-200 ${
-                token ? 'bg-red-500' : 'bg-green-500'
-              } text-white`}
-            >
-              <LogIn className='w-5 h-5 mr-2' />
-              {token ? 'Sair' : 'Login'}
-            </button>
+      <Header showNewPostButton={true} showAuthButton={true} />
+
+      <main className='flex-1 container mx-auto p-4 md:p-6'>
+        {/* Campo de Busca */}
+        <div className='mb-6'>
+          <div className='flex items-center border border-gray-300 rounded-lg p-2 w-full bg-white shadow-sm'>
+            <Search className='w-5 h-5 text-gray-500 flex-shrink-0' />
+            <input
+              type='text'
+              placeholder='Buscar por título...'
+              className='w-full outline-none pl-2 text-gray-700'
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
           </div>
         </div>
-      </header>
 
-      {/* Conteúdo Principal */}
-      <main className='flex-1 container mx-auto p-4'>
-        {/* Campo de Busca */}
-        <div className='flex items-center border border-gray-300 rounded-lg p-2 w-full max-w-md mb-6 bg-white'>
-          <Search className='w-5 h-5 text-gray-500' />
-          <input
-            type='text'
-            placeholder='Buscar por título...'
-            className='w-full outline-none pl-2 text-gray-700'
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
+        {/* Mensagem quando não há resultados */}
+        {paginatedPosts.length === 0 && !isLoading && (
+          <div className='text-center py-8 text-gray-500'>
+            {filteredPosts.length === 0
+              ? 'Nenhuma publicação encontrada'
+              : 'Nenhuma publicação nesta página'}
+          </div>
+        )}
 
-        {/* Tabela de Publicações */}
-        <div className='bg-white rounded-lg shadow-md overflow-hidden'>
-          <table className='w-full'>
-            <thead className='bg-gray-200'>
-              <tr>
-                <th className='p-3 text-left text-gray-700'>TÍTULO</th>
-                <th className='p-3 text-left text-gray-700'>DESCRIÇÃO</th>
-                <th className='p-3 text-left text-gray-700'>DATA</th>
+        {/* Tabela de Publicações - versão desktop */}
+        <div className='hidden md:block space-y-4'>
+          {paginatedPosts.map((item) => (
+            <div
+              key={item._id}
+              className='bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition duration-200 border border-gray-100'
+            >
+              <div className='grid grid-cols-12 gap-4 items-center'>
+                <div className='col-span-5'>
+                  <Link href={`/posts/${item._id}`}>
+                    <h3 className='text-lg font-medium text-violet-600 hover:text-violet-700'>
+                      {item.title}
+                    </h3>
+                  </Link>
+                  <p className='text-gray-700 mt-1 line-clamp-2'>
+                    {item.description}
+                  </p>
+                </div>
+                <div className='col-span-3 text-gray-600'>
+                  {item.author || 'Autor desconhecido'}
+                </div>
+                <div className='col-span-2 text-gray-600'>
+                  {new Date(item.created_at).toLocaleDateString('pt-BR')}
+                </div>
                 {token && (
-                  <th className='p-3 text-left text-gray-700'>AÇÕES</th>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {data
-                .filter((item) =>
-                  item.title.toLowerCase().includes(search.toLowerCase())
-                )
-                .map((item) => {
-                  const formattedDate = new Date(
-                    item.created_at
-                  ).toLocaleDateString('pt-BR')
-
-                  return (
-                    <tr
-                      key={item._id}
-                      className='border-t border-gray-200 hover:bg-gray-50 transition duration-200'
+                  <div className='col-span-2 flex justify-end space-x-4'>
+                    <Link
+                      href={`/posts/${item._id}/edit`}
+                      className='text-violet-500 hover:text-violet-600 transition duration-200'
                     >
-                      <td className='p-3 text-gray-800 hover:text-violet-600'>
-                        <Link
-                          href={`/posts/${item._id}`}
-                          className='hover:text-violet-600 transition duration-200'
-                        >
-                          {item.title}
-                        </Link>
-                      </td>
-                      <td className='p-3 text-gray-700 truncate max-w-xs'>
-                        {item.description}
-                      </td>
-                      <td className='p-3 text-gray-700'>{formattedDate}</td>
-                      {token && (
-                        <td className='p-3 flex space-x-2'>
-                          <Link
-                            href={`/posts/${item._id}/edit`}
-                            className='text-violet-500 hover:text-violet-600 transition duration-200'
-                          >
-                            <Edit className='w-5 h-5' />
-                          </Link>
-                          <button
-                            onClick={() => handleDelete(item)}
-                            className='text-red-500 hover:text-red-700 transition duration-200'
-                          >
-                            <Trash className='w-5 h-5' />
-                          </button>
-                        </td>
-                      )}
-                    </tr>
-                  )
-                })}
-            </tbody>
-          </table>
+                      <Edit className='w-5 h-5' />
+                    </Link>
+                    <button
+                      onClick={() => handleDelete(item)}
+                      className='text-red-500 hover:text-red-600 transition duration-200 cursor-pointer'
+                    >
+                      <Trash className='w-5 h-5' />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
-      </main>
 
-      {/* Footer */}
-      <footer className='bg-white shadow-md p-4 mt-8'>
-        <div className='container mx-auto text-center text-gray-600'>
-          <p>© 2023 Escola Desafio. Todos os direitos reservados.</p>
+        {/* Lista de Publicações - versão mobile */}
+        <div className='md:hidden space-y-4'>
+          {paginatedPosts.map((item) => (
+            <div
+              key={item._id}
+              className='bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition duration-200 border border-gray-100'
+            >
+              <Link href={`/posts/${item._id}`}>
+                <h3 className='text-lg font-medium text-violet-600 mb-1'>
+                  {item.title}
+                </h3>
+              </Link>
+              <p className='text-gray-700 text-sm mb-2 line-clamp-2'>
+                {item.description}
+              </p>
+              <div className='flex justify-between items-center text-sm text-gray-500'>
+                <span>
+                  {new Date(item.created_at).toLocaleDateString('pt-BR')}
+                </span>
+                {token && (
+                  <div className='flex space-x-3'>
+                    <Link
+                      href={`/posts/${item._id}/edit`}
+                      className='text-violet-500 hover:text-violet-600'
+                    >
+                      <Edit className='w-4 h-4' />
+                    </Link>
+                    <button
+                      onClick={() => handleDelete(item)}
+                      className='text-red-500 hover:text-red-600'
+                    >
+                      <Trash className='w-4 h-4' />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
-      </footer>
+
+        {/* Controles de Paginação */}
+        {totalPages > 1 && (
+          <div className='flex flex-col sm:flex-row justify-between items-center mt-8 gap-4'>
+            <div className='flex-1'>
+              {currentPage > 1 && (
+                <Link
+                  href={`/?page=${currentPage - 1}${
+                    search ? `&q=${encodeURIComponent(search)}` : ''
+                  }`}
+                  className='px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200 inline-block'
+                >
+                  Página Anterior
+                </Link>
+              )}
+            </div>
+
+            <span className='text-gray-600 text-sm sm:text-base'>
+              Página {currentPage} de {totalPages}
+            </span>
+
+            <div className='flex-1 text-right'>
+              {currentPage < totalPages && (
+                <Link
+                  href={`/?page=${currentPage + 1}${
+                    search ? `&q=${encodeURIComponent(search)}` : ''
+                  }`}
+                  className='px-4 py-2 bg-violet-500 text-white rounded-lg hover:bg-violet-600 transition duration-200 inline-block'
+                >
+                  Próxima Página
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
+      </main>
 
       {/* Modal de Confirmação de Exclusão */}
       {showModal && (
-        <div className='fixed inset-0 flex items-center justify-center bg-black bg-opacity-50'>
-          <div className='bg-white p-6 rounded-lg shadow-lg w-96'>
+        <div className='fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4'>
+          <div className='bg-white p-6 rounded-lg shadow-lg w-full max-w-md border border-gray-200'>
             <div className='flex justify-between items-center mb-4'>
               <h2 className='text-lg font-bold text-gray-800'>Confirmação</h2>
               <button
@@ -246,7 +337,6 @@ export default function PostsPage() {
         </div>
       )}
 
-      {/* Notificações */}
       <ToastContainer position='bottom-center' autoClose={5000} />
     </div>
   )
