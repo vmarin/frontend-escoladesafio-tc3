@@ -1,8 +1,18 @@
+# Tech Challenge 3 - Pós Tech FIAP
+
 # Manual do Front-end - Escola Desafio
 
 ## Introdução
 
-Este documento detalha a estrutura, configuração e uso do frontend desenvolvido para interagir com a API da Escola Desafio.
+Este documento detalha a estrutura, configuração e uso do frontend desenvolvido pelo Grupo 25 para interagir com a API da Escola Desafio.
+
+### Participantes:
+
+- Fernanda Vaz - RM359195
+- Guilherme Dourado - RM358544
+- Luis Machado - RM358956
+- Vinícius Marin - RM359384
+- Yuri Costa - RM358924
 
 ---
 
@@ -29,19 +39,28 @@ git clone https://github.com/vmarin/frontend-escoladesafio-tc3.git
 
 ### Instale as dependências:
 
-```bash
-npm install
+### Dependências do backend
 
+```bash
+cd backend/
+npm install
 ```
 
-## Inicialize o backend
+### Dependências do frontend
+
+```bash
+cd frontend/
+npm install
+```
+
+### Inicialize o backend
 
 ```bash
 cd backend/
 npm run start:dev
 ```
 
-## Inicialize o frontend
+### Inicialize o frontend
 
 ```bash
 cd frontend/
@@ -52,6 +71,17 @@ A aplicação estará disponível em:
 
 ```bash
 http://localhost:3000
+```
+
+## Login
+
+As alterações de edição, exclusão e criação de postagens só podem ser efetuadas por um usuário cadastrado
+
+### Dados para login:
+
+```
+Usuário: admin
+Senha: admin
 ```
 
 ---
